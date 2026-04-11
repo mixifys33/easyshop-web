@@ -1,0 +1,444 @@
+'use client';
+import Link from 'next/link';
+import Image from 'next/image';
+import React, { useState, useEffect, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  AlignLeft, ChevronDown, ChevronRight, User, Heart, ShoppingCart,
+  Home, Sparkles, Tag, Search, X, Loader2, TrendingUp,
+} from 'lucide-react';
+import { navItemTypes } from '../../../configs/constants';
+import useUser from '@/hooks/useUser';
+import { useStore } from '@/store';
+import { useCategories } from '@/hooks/useProducts';
+import axiosInstance from '@/utils/axiosInstance';
+import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
+
+/* ─── types ─────────────────────────────────────────────── */
+type ProductSuggestion = {
+  id: string; title: string; slug: string;
+  category?: string; sale_price?: number; regular_price?: number;
+};
+type CategoryData = {
+  categories?: Array<{ name: string; subCategories?: Array<{ name: string }> }>;
+  subCategories?: Record<string, string[]>;
+};
+
+const getUserInitials = (name?: string) => {
+  if (!name) return 'U';
+  return name.trim().split(/\s+/).map(p => p[0]?.toUpperCase()).join('').slice(0, 2);
+};
+
+const HIDDEN_PATHS = ['/ai-assistant', '/inbox'];
+
+/* ═══════════════════════════════════════════════════════════
+   COMPONENT
+═══════════════════════════════════════════════════════════ */
+const HeaderBottom = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, isLoading } = useUser();
+  const wishlist = useStore((s: any) => s.wishlist);
+  const cart = useStore((s: any) => s.cart);
+  const { formatPrice } = useCurrencyFormat();
+
+  /* scroll state */
+  const [isSticky, setIsSticky] = useState(false);
+
+  /* categories dropdown */
+  const [showCats, setShowCats] = useState(false);
+  const [hoveredCat, setHoveredCat] = useState<string | null>(null);
+  const catRef = useRef<HTMLDivElement>(null);
+
+  /* search (sticky collapsed) */
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
+  const [loadingSugg, setLoadingSugg] = useState(false);
+  const [showDrop, setShowDrop] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const shouldHide = HIDDEN_PATHS.some(p => pathname === p || pathname?.startsWith(`${p}/`));
+
+  /* fetch categories */
+  const { data: catData } = useCategories() as { data: CategoryData | undefined };
+
+  /* normalise category shape */
+  const categories: Array<{ name: string; subs: string[] }> = React.useMemo(() => {
+    if (!catData) return [];
+    if (Array.isArray(catData.categories)) {
+      return catData.categories.map((c: any) => ({
+        name: typeof c === 'string' ? c : c.name,
+        subs: Array.isArray(c.subCategories)
+          ? c.subCategories.map((s: any) => (typeof s === 'string' ? s : s.name))
+          : (catData.subCategories?.[typeof c === 'string' ? c : c.name] ?? []),
+      }));
+    }
+    return [];
+  }, [catData]);
+
+  /* scroll listener */
+  useEffect(() => {
+    const onScroll = () => setIsSticky(window.scrollY > 80);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  /* close cat dropdown on outside click */
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setShowCats(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  /* close search dropdown on outside click */
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowDrop(false);
+        if (isSticky) setSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [isSticky]);
+
+  /* focus input when search expands */
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => inputRef.current?.focus(), 50);
+  }, [searchOpen]);
+
+  /* suggestions fetch */
+  const fetchSuggestions = async (q: string) => {
+    setLoadingSugg(true);
+    try {
+      const { data } = await axiosInstance.get('/api/products', { params: { q, limit: 7 } });
+      setSuggestions(data?.products ?? []);
+    } catch { setSuggestions([]); }
+    finally { setLoadingSugg(false); }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setSearchQuery(v);
+    if (v.trim().length >= 2) { setShowDrop(true); void fetchSuggestions(v.trim()); }
+    else { setSuggestions([]); setShowDrop(false); }
+  };
+
+  const handleSearch = () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setShowDrop(false); setSearchOpen(false);
+    router.push(`/search?q=${encodeURIComponent(q)}`);
+  };
+
+  const handleSelect = (slug: string, title: string) => {
+    setSearchQuery(title); setShowDrop(false); setSearchOpen(false);
+    router.push(`/product/${slug}`);
+  };
+
+  /* ── shared icon strip (profile / wishlist / cart) ── */
+  const IconStrip = () => (
+    <div className="flex items-center gap-2.5 flex-shrink-0">
+      <Link href={user ? '/profile' : '/login'}
+        className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/30 hover:border-amber-400 transition-colors flex-shrink-0">
+        {user?.avatar || user?.images?.[0]?.url ? (
+          <Image src={user.avatar || user.images[0].url} alt={user.name || 'User'} width={32} height={32} className="w-full h-full object-cover" />
+        ) : user ? (
+          <div className="w-full h-full bg-amber-400 flex items-center justify-center text-teal-900 text-[10px] font-black">
+            {getUserInitials(user.name)}
+          </div>
+        ) : (
+          <div className="w-full h-full bg-white/10 flex items-center justify-center">
+            <User className="w-4 h-4 text-white" />
+          </div>
+        )}
+      </Link>
+      <Link href="/wishlist" className="relative p-1">
+        <Heart className="w-5 h-5 text-white/80 hover:text-white transition-colors" />
+        {wishlist?.length > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white px-0.5">
+            {wishlist.length > 9 ? '9+' : wishlist.length}
+          </span>
+        )}
+      </Link>
+      <Link href="/cart" className="relative p-1">
+        <ShoppingCart className="w-5 h-5 text-white/80 hover:text-white transition-colors" />
+        {cart?.length > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-teal-900 px-0.5">
+            {cart.length > 9 ? '9+' : cart.length}
+          </span>
+        )}
+      </Link>
+    </div>
+  );
+
+  /* ── categories dropdown panel ── */
+  const CatDropdown = () => (
+    <div className="absolute left-0 top-full mt-1 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-slide-down">
+      {categories.length === 0 ? (
+        <div className="px-4 py-6 text-sm text-gray-400 text-center">Loading categories…</div>
+      ) : (
+        <div className="py-2">
+          {categories.map((cat) => (
+            <div key={cat.name}
+              className="relative group/cat"
+              onMouseEnter={() => setHoveredCat(cat.name)}
+              onMouseLeave={() => setHoveredCat(null)}>
+              <Link
+                href={`/products?category=${encodeURIComponent(cat.name.toLowerCase())}`}
+                onClick={() => setShowCats(false)}
+                className="flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-teal-50 text-gray-700 hover:text-teal-700 text-sm font-medium transition-colors">
+                <span className="flex items-center gap-2.5">
+                  <Tag className="w-3.5 h-3.5 text-gray-400 group-hover/cat:text-teal-500 transition-colors" />
+                  {cat.name}
+                </span>
+                {cat.subs.length > 0 && <ChevronRight className="w-3.5 h-3.5 text-gray-400" />}
+              </Link>
+
+              {/* sub-category flyout */}
+              {cat.subs.length > 0 && hoveredCat === cat.name && (
+                <div className="absolute left-full top-0 ml-1 w-52 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-slide-down">
+                  {cat.subs.map((sub) => (
+                    <Link
+                      key={sub}
+                      href={`/products?category=${encodeURIComponent(cat.name.toLowerCase())}&subCategory=${encodeURIComponent(sub.toLowerCase())}`}
+                      onClick={() => setShowCats(false)}
+                      className="block px-4 py-2 text-sm text-gray-600 hover:bg-teal-50 hover:text-teal-700 transition-colors">
+                      {sub}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  /* ── search suggestions dropdown ── */
+  const SearchDropdown = () => (
+    <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-slide-down">
+      {loadingSugg ? (
+        <div className="flex items-center gap-3 px-4 py-4 text-sm text-gray-500">
+          <Loader2 className="w-4 h-4 animate-spin text-teal-600" /> Searching…
+        </div>
+      ) : suggestions.length > 0 ? (
+        <>
+          <div className="px-4 py-2 bg-gradient-to-r from-teal-50 to-indigo-50 border-b border-gray-100 flex items-center gap-2">
+            <TrendingUp className="w-3.5 h-3.5 text-teal-600" />
+            <span className="text-xs font-bold text-teal-700 uppercase tracking-wider">Suggestions</span>
+          </div>
+          <ul className="max-h-64 overflow-y-auto">
+            {suggestions.map((item) => (
+              <li key={item.id}>
+                <button onClick={() => handleSelect(item.slug, item.title)}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-teal-50 transition-colors text-left group">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-teal-400 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+                      {item.category && <p className="text-xs text-gray-400 capitalize">{item.category}</p>}
+                    </div>
+                  </div>
+                  <span className="text-sm font-bold text-teal-700 flex-shrink-0 bg-teal-50 px-2 py-0.5 rounded-lg">
+                    {formatPrice(item.sale_price ?? item.regular_price)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
+            <button onClick={handleSearch} className="text-xs text-teal-600 font-semibold hover:text-teal-800 transition-colors">
+              See all results for &ldquo;{searchQuery}&rdquo; →
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="px-4 py-5 text-sm text-gray-500 text-center">
+          No results for &ldquo;{searchQuery}&rdquo;
+        </div>
+      )}
+    </div>
+  );
+
+  /* ════════════════════════════════════════════════════════
+     RENDER
+  ════════════════════════════════════════════════════════ */
+  return (
+    <>
+      {/* ── NAV BAR ─────────────────────────────────────── */}
+      <div className={`w-full bg-[#0d3f4d] transition-all duration-300 ${
+        isSticky ? 'fixed top-0 left-0 z-[60] shadow-xl' : 'relative'
+      }`}>
+        <div className="max-w-[1400px] mx-auto px-3 lg:px-8 flex items-center gap-2 h-11 md:h-12">
+
+          {/* ── Logo (sticky only) ── */}
+          {isSticky && (
+            <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 mr-1">
+              <div className="w-7 h-7 bg-amber-400 rounded-lg flex items-center justify-center shadow-sm">
+                <span className="text-teal-800 font-black text-xs leading-none" style={{ fontFamily: 'var(--font-space)' }}>ES</span>
+              </div>
+              <span className="hidden sm:block text-white font-black text-sm" style={{ fontFamily: 'var(--font-space)' }}>
+                Easy<span className="text-amber-400">Shop</span>
+              </span>
+            </Link>
+          )}
+
+          {/* ── Categories button ── */}
+          <div ref={catRef} className="relative flex-shrink-0">
+            <button
+              onClick={() => setShowCats(!showCats)}
+              className="flex items-center gap-1.5 px-3 md:px-4 h-11 md:h-12 font-black text-xs md:text-sm transition-all active:scale-95"
+              style={{ background: 'linear-gradient(135deg, #fcd34d, #f59e0b)', color: '#0f2744', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              <AlignLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">All Categories</span>
+              <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showCats ? 'rotate-180' : ''}`} />
+            </button>
+            {showCats && <CatDropdown />}
+          </div>
+
+          {/* ── Nav links ── */}
+          <nav className="flex items-center overflow-x-auto scrollbar-hide flex-1 px-1 md:px-2">
+            {navItemTypes.map((item: NavItemTypes, i: number) => {
+              const active = pathname === item.href;
+              return (
+                <Link key={i} href={item.href}
+                  className={`px-2.5 md:px-3 h-11 md:h-12 flex items-center text-xs md:text-sm whitespace-nowrap transition-all duration-200 border-b-2 ${
+                    active ? 'border-amber-300' : 'border-transparent hover:border-white/30'
+                  }`}
+                  style={{
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontWeight: 700,
+                    color: active ? '#fcd34d' : '#ffffff',
+                  }}>
+                  {item.title}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* ── Right side ── */}
+          <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+
+            {/* E-AI pill */}
+            <Link href="/ai-assistant"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-xs font-semibold rounded-full transition-all shadow-md flex-shrink-0">
+              <Sparkles className="w-3.5 h-3.5" />
+              E-AI
+            </Link>
+
+            {/* ── Sticky extras ── */}
+            {isSticky && (
+              <>
+                {/* Collapsible search */}
+                <div ref={searchRef} className="relative hidden md:flex items-center">
+                  {!searchOpen ? (
+                    <button
+                      onClick={() => setSearchOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all border border-white/20">
+                      <Search className="w-3.5 h-3.5" />
+                      <span className="hidden lg:inline">Search products</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center bg-white rounded-xl overflow-hidden shadow-lg ring-2 ring-amber-400/60 transition-all w-56 lg:w-72">
+                      <Search className="ml-3 w-3.5 h-3.5 text-teal-600 flex-shrink-0" />
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        placeholder="Search products…"
+                        value={searchQuery}
+                        onChange={handleInputChange}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        className="flex-1 px-2 py-2 text-sm text-gray-800 placeholder-gray-400 outline-none bg-transparent"
+                      />
+                      {searchQuery ? (
+                        <button onClick={() => { setSearchQuery(''); setSuggestions([]); setShowDrop(false); }}
+                          className="p-1.5 text-gray-400 hover:text-gray-600">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <button onClick={() => setSearchOpen(false)} className="p-1.5 text-gray-400 hover:text-gray-600">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button onClick={handleSearch}
+                        className="bg-amber-400 hover:bg-amber-500 text-teal-900 font-bold px-3 py-2 text-xs transition-all flex-shrink-0 active:scale-95">
+                        Go
+                      </button>
+                    </div>
+                  )}
+                  {showDrop && searchOpen && <SearchDropdown />}
+                </div>
+
+                {/* Profile / wishlist / cart */}
+                <div className="hidden md:flex">
+                  <IconStrip />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── MOBILE BOTTOM NAV ───────────────────────────── */}
+      {!shouldHide && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="flex items-center justify-around py-1.5 px-2">
+            {[
+              { href: '/', icon: Home, label: 'Home', activeColor: 'text-teal-700', activeBg: 'bg-teal-50' },
+              { href: '/ai-assistant', icon: Sparkles, label: 'E-AI', gradient: true },
+              { href: '/wishlist', icon: Heart, label: 'Wishlist', activeColor: 'text-red-500', activeBg: 'bg-red-50', badge: wishlist?.length, badgeColor: 'bg-red-500 text-white' },
+              { href: '/cart', icon: ShoppingCart, label: 'Cart', activeColor: 'text-teal-700', activeBg: 'bg-teal-50', badge: cart?.length, badgeColor: 'bg-amber-400 text-teal-900' },
+            ].map(({ href, icon: Icon, label, activeColor, activeBg, gradient, badge, badgeColor }: any) => {
+              const active = pathname === href;
+              return (
+                <Link key={href} href={href} className="flex flex-col items-center gap-0.5 p-1 min-w-[52px]">
+                  <div className={`relative flex items-center justify-center w-9 h-9 rounded-full transition-all ${
+                    gradient ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-md' :
+                    active ? activeBg : 'bg-gray-100'
+                  }`}>
+                    <Icon className={`w-4 h-4 ${gradient ? 'text-white' : active ? activeColor : 'text-gray-500'}`} />
+                    {badge > 0 && (
+                      <span className={`absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[9px] font-bold px-0.5 ${badgeColor}`}>
+                        {badge > 9 ? '9+' : badge}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-[10px] font-medium ${active ? (activeColor || 'text-teal-700') : 'text-gray-500'}`}>{label}</span>
+                </Link>
+              );
+            })}
+
+            {/* Profile */}
+            <Link href={user ? '/profile' : '/login'} className="flex flex-col items-center gap-0.5 p-1 min-w-[52px]">
+              <div className={`w-9 h-9 rounded-full overflow-hidden transition-all ${pathname === '/profile' ? 'ring-2 ring-teal-600' : ''} ${!user ? 'bg-gray-100 flex items-center justify-center' : ''}`}>
+                {user?.avatar || user?.images?.[0]?.url ? (
+                  <Image src={user.avatar || user.images[0].url} alt={user.name || 'User'} width={36} height={36} className="w-full h-full object-cover" />
+                ) : user ? (
+                  <div className="w-full h-full bg-gradient-to-br from-teal-600 to-blue-500 flex items-center justify-center text-white text-[10px] font-black">
+                    {getUserInitials(user.name)}
+                  </div>
+                ) : (
+                  <User className="w-4 h-4 text-gray-500" />
+                )}
+              </div>
+              <span className={`text-[10px] font-medium ${pathname === '/profile' ? 'text-teal-700' : 'text-gray-500'}`}>
+                {isLoading ? '…' : user ? 'Profile' : 'Login'}
+              </span>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {!shouldHide && <div className="md:hidden h-16" />}
+    </>
+  );
+};
+
+export default HeaderBottom;
