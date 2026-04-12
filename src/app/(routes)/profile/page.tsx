@@ -42,6 +42,8 @@ interface PickupStation {
   district: string;
   county: string;
   country: string;
+  city?: string;
+  region?: string;
   deliveryFee: number;
   isActive: boolean;
   operatingHours?: string;
