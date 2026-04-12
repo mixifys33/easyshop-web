@@ -55,7 +55,7 @@ interface Order {
   createdAt: string;
   status: string;
   total: number;
-  items?: Array<{ image?: string; title?: string; quantity?: number; price?: number }>;
+  items?: Array<{ image?: string; productImage?: string; title?: string; productName?: string; quantity?: number; price?: number }>;
 }
 
 interface WalletData {
