@@ -34,6 +34,14 @@ interface VerifyResult {
   checks: Record<string, { pass: boolean; found?: string; expected?: string; note?: string }>;
   summary: string;
   rejectionReason?: string | null;
+  perImageResults?: Array<{
+    verified: boolean | null;
+    imageIndex: number;
+    summary: string;
+    rejectionReason?: string | null;
+    checks?: Record<string, any>;
+  }>;
+  duplicateWarning?: string | null;
 }
 
 export default function PaymentPage() {
