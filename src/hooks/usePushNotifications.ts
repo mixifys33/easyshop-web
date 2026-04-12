@@ -151,9 +151,9 @@ export function usePushNotifications() {
           badge: options.badge || "/icons/badge-icon.png",
           tag: options.tag,
           data: options.data,
-          actions: options.actions,
           requireInteraction: options.requireInteraction,
-        });
+          ...(options.actions ? { actions: options.actions } : {}),
+        } as NotificationOptions);
         return true;
       } catch (error) {
         console.error("Error showing notification:", error);
