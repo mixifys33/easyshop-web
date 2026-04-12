@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
@@ -511,5 +511,19 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+import { Suspense as SuspenseBoundary } from "react";
+
+export default function CheckoutPage() {
+  return (
+    <SuspenseBoundary fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+      </div>
+    }>
+      <CheckoutContent />
+    </SuspenseBoundary>
   );
 }
