@@ -106,16 +106,16 @@ const ProductsPage = () => {
     return defaultBrands;
   }, [data?.facets?.brands]);
 
-  const availableColors = useMemo(() => {
+  const availableColors = useMemo((): string[] => {
     if (data?.facets?.colors && data.facets.colors.length > 0) {
-      return data.facets.colors;
+      return data.facets.colors.map((c: any) => typeof c === 'string' ? c : c.name);
     }
     return defaultColors;
   }, [data?.facets?.colors]);
 
-  const availableSizes = useMemo(() => {
+  const availableSizes = useMemo((): string[] => {
     if (data?.facets?.sizes && data.facets.sizes.length > 0) {
-      return data.facets.sizes;
+      return data.facets.sizes.map((s: any) => typeof s === 'string' ? s : s.name);
     }
     return defaultSizes;
   }, [data?.facets?.sizes]);
