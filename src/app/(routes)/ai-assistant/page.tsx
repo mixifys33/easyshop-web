@@ -253,7 +253,7 @@ const EasyAIPage = () => {
       setActionNotification(`Removed from wishlist`)
     } else {
       addToWishlist(
-        { id: product.id, title: product.title, price: product.price, image: product.image },
+        { id: product.id, title: product.title, price: product.price, image: product.image, shopId: product.shopId || '' },
         user, null, null
       )
       setActionNotification(`Saved to wishlist!`)

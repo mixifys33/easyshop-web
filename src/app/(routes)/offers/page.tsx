@@ -268,7 +268,7 @@ export default function OffersPage() {
     if (!user) { toast.error("Please sign in"); return; }
     const inWishlist = wishlistIds.includes(productId);
     if (inWishlist) removeFromWishlist(productId, user, null, null);
-    else addToWishlist({ id: productId, title: "", price: 0, image: "" }, user, null, null);
+    else addToWishlist({ id: productId, title: "", price: 0, image: "", shopId: "" }, user, null, null);
   };
 
   const filtered = useMemo(() => {
