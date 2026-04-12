@@ -34,8 +34,8 @@ const defaultContent: FooterContent = {
   companyName: "EASY SHOP",
   tagline: "Your Trusted Marketplace",
   description: "Uganda's leading online marketplace connecting buyers and sellers. Shop with confidence, sell with ease.",
-  email: "support@easyshop.ug",
-  phone: "+256 700 000 000",
+  email: "dwightkim12@gmail.com",
+  phone: "+256 761 818 885",
   address: "Kampala, Uganda",
   socialLinks: {
     facebook: "https://facebook.com/easyshopug",
@@ -59,7 +59,7 @@ const defaultContent: FooterContent = {
   ],
   sellerLinks: [
     { label: "Become a Seller", href: "/become-seller" },
-    { label: "Seller Dashboard", href: process.env.NEXT_PUBLIC_SELLER_UI_URL || "http://localhost:3003" },
+    { label: "Seller Dashboard", href: "/seller-dashboard" },
     { label: "Seller Guidelines", href: "/seller-guidelines" },
     { label: "Success Stories", href: "/success-stories" },
   ],

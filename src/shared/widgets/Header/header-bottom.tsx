@@ -330,7 +330,7 @@ const HeaderBottom = () => {
             <Link href="/ai-assistant"
               className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-xs font-semibold rounded-full transition-all shadow-md flex-shrink-0">
               <Sparkles className="w-3.5 h-3.5" />
-              E-AI
+              Eshop AI
             </Link>
 
             {/* ── Sticky extras ── */}
@@ -392,7 +392,7 @@ const HeaderBottom = () => {
           <div className="flex items-center justify-around py-1.5 px-2">
             {[
               { href: '/', icon: Home, label: 'Home', activeColor: 'text-teal-700', activeBg: 'bg-teal-50' },
-              { href: '/ai-assistant', icon: Sparkles, label: 'E-AI', gradient: true },
+              { href: '/ai-assistant', icon: Sparkles, label: 'Eshop AI', gradient: true },
               { href: '/wishlist', icon: Heart, label: 'Wishlist', activeColor: 'text-red-500', activeBg: 'bg-red-50', badge: wishlist?.length, badgeColor: 'bg-red-500 text-white' },
               { href: '/cart', icon: ShoppingCart, label: 'Cart', activeColor: 'text-teal-700', activeBg: 'bg-teal-50', badge: cart?.length, badgeColor: 'bg-amber-400 text-teal-900' },
             ].map(({ href, icon: Icon, label, activeColor, activeBg, gradient, badge, badgeColor }: any) => {

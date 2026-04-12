@@ -9,10 +9,6 @@
         href:  "/products", 
     },
     {
-        title: "Events",
-        href:  "/events",
-    },
-    {
         title: "Offers",
         href:  "/offers",
     },
@@ -20,8 +16,17 @@
         title: "Shops",
         href:  "/shops",
     },
+     {
+        title: "Events",
+        href:  "/events",
+    },
+     {
+        title: "Product comparsion",
+        href:  "/compare",
+    }
+    /*
     {
         title: "Become A seller",
         href:  "/become-seller",
-    }
+    }*/
     ]
