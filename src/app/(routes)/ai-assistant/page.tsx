@@ -229,7 +229,7 @@ const EasyAIPage = () => {
     }
     const inCart = cart.some((i: any) => i.id === product.id)
     if (inCart) {
-      removeFromCart(product.id, user)
+      removeFromCart(product.id, user, null, null)
       setActionNotification(`Removed "${product.title}" from cart`)
     } else {
       addToCart(
@@ -249,12 +249,12 @@ const EasyAIPage = () => {
     }
     const inWishlist = wishlist.some((i: any) => i.id === product.id)
     if (inWishlist) {
-      removeFromWishlist(product.id, user)
+      removeFromWishlist(product.id, user, null, null)
       setActionNotification(`Removed from wishlist`)
     } else {
       addToWishlist(
         { id: product.id, title: product.title, price: product.price, image: product.image },
-        user
+        user, null, null
       )
       setActionNotification(`Saved to wishlist!`)
     }
