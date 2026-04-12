@@ -1,7 +1,16 @@
 "use client";
 
 import React from 'react';
-import { formatDistanceToNow } from 'date-fns';
+// date-fns not installed — inline fallback
+const formatDistanceToNow = (date: Date) => {
+  const diff = Date.now() - date.getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+};
 import type { Conversation, UserData, UserStatus } from '@/types/chat';
 import StatusIndicator from './StatusIndicator';
 import UnreadBadge from './UnreadBadge';
