@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Header from "./Header";
+import Header from "./header";
 
 // Pages where the header should be hidden (full-screen experiences)
 const HIDDEN_HEADER_PATHS = [
