@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { Suspense, useState, useCallback, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, X, Grid3X3, LayoutList } from "lucide-react";
 import { useProducts, useCategories } from "@/hooks/useProducts";
@@ -40,7 +40,7 @@ const defaultColors = [
 
 const defaultSizes = ["XS", "S", "M", "L", "XL", "XXL", "28", "30", "32", "34", "36", "38", "40", "42"];
 
-const ProductsPage = () => {
+const ProductsPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -484,4 +484,10 @@ const ProductsPage = () => {
   );
 };
 
-export default ProductsPage;
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-[#115061]/20 border-t-[#115061] rounded-full animate-spin" /></div>}>
+      <ProductsPageContent />
+    </Suspense>
+  );
+}

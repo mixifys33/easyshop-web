@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -46,7 +46,6 @@ interface VerifyResult {
 
 export default function PaymentPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user } = useUser();
   const clearCart = useStore((s: any) => s.clearCart);
 

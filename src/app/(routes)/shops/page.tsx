@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -147,7 +147,7 @@ const ShopCard = ({ shop, viewMode }: { shop: Shop; viewMode: "grid" | "list" })
 
 
 // Main Shops Page Component
-export default function ShopsPage() {
+function ShopsContent() {
   const searchParams = useSearchParams();
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
@@ -461,5 +461,13 @@ export default function ShopsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ShopsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-[#115061]/20 border-t-[#115061] rounded-full animate-spin" /></div>}>
+      <ShopsContent />
+    </Suspense>
   );
 }

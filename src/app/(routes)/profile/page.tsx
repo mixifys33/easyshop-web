@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import useUser from "@/hooks/useUser";
@@ -1161,7 +1161,7 @@ const FollowingTab = () => {
 
 
 // ============ MAIN PROFILE PAGE ============
-const ProfilePage = () => {
+const ProfilePageContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -1554,4 +1554,10 @@ const ProfilePage = () => {
   );
 };
 
-export default ProfilePage;
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-[#115061]/20 border-t-[#115061] rounded-full animate-spin" /></div>}>
+      <ProfilePageContent />
+    </Suspense>
+  );
+}
