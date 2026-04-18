@@ -1,6 +1,6 @@
 {
-  "name": "EasyShop — Uganda's #1 Marketplace",
-  "short_name": "EasyShop",
+  "name": "Eshop — Uganda's #1 Marketplace",
+  "short_name": "Eshop ug",
   "description": "Shop smarter, live better. Discover amazing products at unbeatable prices.",
   "start_url": "/",
   "display": "standalone",
@@ -11,30 +11,28 @@
   "categories": ["shopping", "lifestyle"],
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "48x48",
-      "type": "image/x-icon"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
+      "purpose": "any"
+    },
     {
-      "src": "/splash.png",
-      "sizes": "1080x1920",
+      "src": "/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "EasyShop Home"
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
@@ -43,14 +41,14 @@
       "short_name": "Shop",
       "description": "Browse all products",
       "url": "/products",
-      "icons": [{ "src": "/favicon.ico", "sizes": "48x48" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "My Cart",
       "short_name": "Cart",
       "description": "View your shopping cart",
       "url": "/cart",
-      "icons": [{ "src": "/favicon.ico", "sizes": "48x48" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

@@ -38,7 +38,7 @@ const STEPS_ANDROID = [
 ];
 const STEPS_DESKTOP = [
   { step: "1", text: 'Look for the install icon (⊕) in the address bar' },
-  { step: "2", text: 'Click "Install Eshop UG" in the popup' },
+  { step: "2", text: 'Click "Install Eshop.ug" in the popup' },
   { step: "3", text: 'The app opens in its own window — enjoy!' },
 ];
 
@@ -134,21 +134,31 @@ export default function InstallPage() {
       try {
         await deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === "accepted") setInstalled(true);
+        if (outcome === "accepted") {
+          setInstalled(true);
+        } else {
+          // User dismissed — reset so they can try again
+          setPwaInstalling(false);
+        }
         setDeferredPrompt(null);
-      } catch { /* dismissed */ }
-      finally { setPwaInstalling(false); }
+      } catch {
+        setPwaInstalling(false);
+      } finally {
+        setPwaInstalling(false);
+      }
     } else {
-      // No prompt available — scroll to the step cards so user sees instructions
+      // No prompt — open browser's native add-to-homescreen via URL trick on Android
+      // On desktop/iOS just scroll to the manual steps
+      if (platform === "android") {
+        // Chrome on Android: navigate to the page which re-triggers the prompt check
+        window.location.href = window.location.href;
+      }
       setActiveTab("pwa");
       setTimeout(() => {
         tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 50);
     }
   };
-
-  // ── Hero button: switch to Android tab + scroll ────────────────────────────
-  // (already defined above)
 
   const particles = Array.from({ length: 12 }, (_, i) => ({
     width:  `${20 + (i * 17) % 40}px`,
@@ -192,7 +202,7 @@ export default function InstallPage() {
           <div>
             <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-4">
               <span className="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
-                Eshop UG
+                Eshop.ug
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-white/80 max-w-2xl">
@@ -218,7 +228,7 @@ export default function InstallPage() {
           {installed ? (
             <div className="flex items-center gap-3 bg-green-500/20 border border-green-400/40 rounded-2xl px-8 py-4 text-green-300 text-lg font-semibold">
               <CheckCircle size={24} />
-              Eshop UG is installed!
+              Eshop Uganda is installed!
             </div>
           ) : (
             <button
@@ -227,7 +237,7 @@ export default function InstallPage() {
             >
               <span className="relative z-10 flex items-center gap-3">
                 <Download size={22} />
-                Install Eshop UG
+                Install Eshop uganda
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
@@ -479,7 +489,7 @@ export default function InstallPage() {
                   'Go to Settings → Security → Enable "Unknown Sources" or "Install unknown apps"',
                   "Open the downloaded APK file from your Downloads folder",
                   'Tap "Install" and wait for the installation to complete',
-                  "Open Eshop UG from your app drawer and enjoy!",
+                  "Open Eshop uganda from your app drawer and enjoy!",
                 ].map((text, i) => (
                   <div key={i} className="flex gap-3 items-start">
                     <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm flex items-center justify-center shrink-0 mt-0.5">
@@ -497,7 +507,7 @@ export default function InstallPage() {
       {/* ── FEATURES GRID ── */}
       <section className="max-w-6xl mx-auto px-4 py-12">
         <h2 className="text-3xl font-black text-center text-gray-900 mb-2">Why install the app?</h2>
-        <p className="text-center text-gray-500 mb-10">Everything you love about Eshop UG, supercharged.</p>
+        <p className="text-center text-gray-500 mb-10">Everything you love about Easyshop uganda, supercharged.</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map(({ icon: Icon, title, desc, color }) => (
             <div key={title} className="group bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -522,7 +532,7 @@ export default function InstallPage() {
             <ShoppingBag size={48} className="mx-auto mb-4 text-yellow-400" />
             <h2 className="text-3xl font-black mb-3">Start shopping smarter</h2>
             <p className="text-white/70 mb-8 max-w-md mx-auto">
-              Install Eshop UG today and get access to exclusive app-only deals, faster checkout, and real-time order tracking.
+              Install Eshop-ug today and get access to exclusive app-only deals, faster checkout, and real-time order tracking.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <button
