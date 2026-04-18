@@ -9,12 +9,15 @@ export const metadata = {
   title: 'EasyShop — Uganda\'s #1 Marketplace',
   description: 'Shop smarter, live better. Discover amazing products at unbeatable prices on EasyShop — Uganda\'s leading online marketplace.',
   manifest: '/manifest.json',
-  themeColor: '#0d3f4d',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'EasyShop',
   },
+};
+
+export const viewport = {
+  themeColor: '#0d3f4d',
 };
 
 const plusJakarta = Plus_Jakarta_Sans({
