@@ -1,10 +1,10 @@
 [
   {
     "name": "Eshop UG v1.5.0 — Latest",
-    "fileName": "Eshop-ug-latest-v1.5.0.apk",
+    "fileName": "Eshop-ug.lastest.version-1.5.0.apk",
     "version": "1.5.0",
     "size": "76.1 MB",
-    "downloadUrl": "https://drive.usercontent.google.com/download?id=1N0Oax7CpBOf5w284i52WCRoV9PDsvm6W&export=download&authuser=0&confirm=t",
+    "downloadUrl": "https://github.com/mixifys33/easyshop-web/releases/download/easyshop/Eshop-ug.lastest.version-1.5.0.apk",
     "uploadedAt": "2026-04-18T00:00:00.000Z",
     "available": true
   },
@@ -13,8 +13,9 @@
     "fileName": "Eshop-ug-v1.0.0.apk",
     "version": "1.0.0",
     "size": "73.1 MB",
-    "downloadUrl": "https://drive.usercontent.google.com/download?id=16V7b8FHZnxVhCsnGeugESd960pep0h4f&export=download&authuser=0&confirm=t",
+    "downloadUrl": "",
+    "note": "Add GitHub Release URL here when ready",
     "uploadedAt": "2026-04-18T00:00:00.000Z",
-    "available": true
+    "available": false
   }
 ]
