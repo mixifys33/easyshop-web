@@ -287,7 +287,7 @@ export default function InstallPage() {
               </div>
               <h3 className="text-2xl font-black mb-2">Install PWA Version</h3>
               <p className="text-white/80 text-sm mb-6 max-w-sm mx-auto">
-                Add Eshop UG directly to your home screen or desktop — works like a native app, no app store needed.
+                Add Eshop.ug directly to your home screen or desktop — works like a native app, no app store needed.
               </p>
 
               {installed ? (
@@ -376,7 +376,7 @@ export default function InstallPage() {
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-white text-center shadow-xl">
               <CheckCircle size={48} className="mx-auto mb-4" />
               <h3 className="text-2xl font-black mb-2">Successfully Installed!</h3>
-              <p className="text-white/90">Eshop UG is now on your device. Enjoy the full app experience!</p>
+              <p className="text-white/90">Eshop.ug is now on your device. Enjoy the full app experience!</p>
             </div>
           )}
         </section>
