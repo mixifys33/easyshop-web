@@ -29,19 +29,20 @@ const GoogleButton: React.FC<GoogleButtonProps> = ({
         endpoint,
         { 
           access_token: data.access_token,
-          email: data.user_info.email,
-          name: data.user_info.name,
-          picture: data.user_info.picture,
+          user_info: data.user_info,
         },
         { withCredentials: true }
       );
       return response.data;
     },
     onSuccess: (data) => {
+      // Store the token so the user stays logged in
+      if (data?.token) {
+        localStorage.setItem('accessToken', data.token);
+      }
       if (onSuccess) {
         onSuccess();
       } else {
-        // Default behavior: redirect to home on success
         setTimeout(() => {
           router.push("/");
         }, 1000);
