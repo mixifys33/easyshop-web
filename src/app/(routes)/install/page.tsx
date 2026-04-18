@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
-  Smartphone, Monitor, Download, Chrome, Apple, Star,
+  Smartphone, Monitor, Download, Apple, Star,
   Shield, Zap, Wifi, Bell, ShoppingBag, ArrowRight,
   CheckCircle, Play, Globe, Package, Sparkles, ChevronDown,
-  ExternalLink,
+  FileArchive, Clock, HardDrive, RefreshCw,
 } from "lucide-react";
+import type { ApkRelease } from "@/app/api/apk-releases/route";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface BeforeInstallPromptEvent extends Event {
@@ -60,6 +61,22 @@ export default function InstallPage() {
   const [activeTab, setActiveTab] = useState<"pwa" | "android">("pwa");
   const [showSteps, setShowSteps] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
+
+  // APK releases
+  const [apkReleases, setApkReleases] = useState<ApkRelease[]>([]);
+  const [apkLoading, setApkLoading] = useState(false);
+
+  const fetchApks = async () => {
+    setApkLoading(true);
+    try {
+      const res = await fetch("/api/apk-releases");
+      const data = await res.json();
+      setApkReleases(data.releases ?? []);
+    } catch { setApkReleases([]); }
+    finally { setApkLoading(false); }
+  };
+
+  useEffect(() => { fetchApks(); }, []);
 
   // Detect platform
   useEffect(() => {
@@ -368,40 +385,72 @@ export default function InstallPage() {
               </div>
             </div>
 
-            {/* Coming soon / placeholder for APK links */}
-            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5 mb-6 flex gap-3">
-              <Sparkles size={20} className="text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-amber-800 text-sm">
-                APK download links will be added here. You can link to Google Drive, direct APK files, or any other source below.
-              </p>
-            </div>
-
-            {/* APK download slots — you can fill these in */}
-            <div className="space-y-4">
-              {[
-                { label: "EasyShop v1.0 — Google Drive", icon: ExternalLink, href: "#", available: false },
-                { label: "EasyShop v1.0 — Direct Download", icon: Download,    href: "#", available: false },
-              ].map(({ label, icon: Icon, href, available }) => (
-                <a
-                  key={label}
-                  href={available ? href : undefined}
-                  className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 ${
-                    available
-                      ? "border-green-200 bg-green-50 hover:bg-green-100 hover:border-green-400 cursor-pointer"
-                      : "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${available ? "bg-green-500" : "bg-gray-300"}`}>
-                      <Icon size={18} className="text-white" />
-                    </div>
-                    <span className="font-semibold text-gray-700">{label}</span>
+            {/* APK download slots — dynamic from /public/apk folder */}
+            <div className="space-y-3">
+              {apkLoading ? (
+                <div className="flex items-center justify-center gap-3 py-10 text-gray-400">
+                  <RefreshCw size={20} className="animate-spin" />
+                  <span className="text-sm">Loading releases…</span>
+                </div>
+              ) : apkReleases.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-10 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
+                    <Package size={28} className="text-gray-300" />
                   </div>
-                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${available ? "bg-green-500 text-white" : "bg-gray-200 text-gray-500"}`}>
-                    {available ? "Download" : "Coming Soon"}
-                  </span>
-                </a>
-              ))}
+                  <p className="text-gray-500 text-sm font-medium">No APK releases yet</p>
+                  <p className="text-gray-400 text-xs max-w-xs">
+                    Drop <code className="bg-gray-100 px-1 rounded">.apk</code> files into{" "}
+                    <code className="bg-gray-100 px-1 rounded">public/apk/</code> and they'll appear here automatically.
+                  </p>
+                </div>
+              ) : (
+                apkReleases.map((apk) => (
+                  <a
+                    key={apk.fileName}
+                    href={apk.downloadUrl}
+                    download={apk.fileName}
+                    className="group flex items-center justify-between p-4 rounded-xl border-2 border-green-200 bg-green-50 hover:bg-green-100 hover:border-green-400 transition-all duration-200 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md shrink-0">
+                        <FileArchive size={20} className="text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-800 truncate">{apk.name}</p>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className="flex items-center gap-1 text-xs text-gray-500">
+                            <HardDrive size={11} /> {apk.size}
+                          </span>
+                          <span className="flex items-center gap-1 text-xs text-gray-400">
+                            <Clock size={11} />
+                            {new Date(apk.uploadedAt).toLocaleDateString("en-UG", {
+                              day: "numeric", month: "short", year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-3">
+                      <span className="hidden sm:block text-xs font-bold text-gray-500">{apk.fileName}</span>
+                      <div className="flex items-center gap-1.5 bg-green-500 group-hover:bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">
+                        <Download size={13} />
+                        Download
+                      </div>
+                    </div>
+                  </a>
+                ))
+              )}
+
+              {/* Refresh button */}
+              {!apkLoading && (
+                <button
+                  onClick={fetchApks}
+                  className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 transition-colors mx-auto pt-1"
+                >
+                  <RefreshCw size={12} />
+                  Refresh releases
+                </button>
+              )}
             </div>
 
             {/* How to install APK */}
