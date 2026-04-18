@@ -69,12 +69,32 @@ export default function InstallPage() {
     else setPlatform("desktop");
   }, []);
 
-  // Capture PWA install prompt
+  // Capture PWA install prompt + auto-trigger after short delay
   useEffect(() => {
+    // Check if already installed (standalone mode)
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setInstalled(true);
+      return;
+    }
+
     const handler = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      const prompt = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(prompt);
+
+      // Auto-trigger the native install prompt after 1.5s on this page
+      setTimeout(async () => {
+        try {
+          await prompt.prompt();
+          const { outcome } = await prompt.userChoice;
+          if (outcome === "accepted") setInstalled(true);
+          setDeferredPrompt(null);
+        } catch {
+          // User dismissed or prompt already used — keep manual button visible
+        }
+      }, 1500);
     };
+
     window.addEventListener("beforeinstallprompt", handler);
     window.addEventListener("appinstalled", () => setInstalled(true));
     return () => {

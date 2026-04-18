@@ -3,10 +3,18 @@ import { Plus_Jakarta_Sans, Space_Grotesk, Inter } from "next/font/google";
 import Providers from "./providers";
 import ConditionalHeader from "../shared/widgets/Header/ConditionalHeader";
 import ProductComparisonBar from "../shared/components/product-comparison/ProductComparisonBar";
+import ServiceWorkerRegistrar from "../shared/components/ServiceWorkerRegistrar";
 
 export const metadata = {
   title: 'EasyShop — Uganda\'s #1 Marketplace',
   description: 'Shop smarter, live better. Discover amazing products at unbeatable prices on EasyShop — Uganda\'s leading online marketplace.',
+  manifest: '/manifest.json',
+  themeColor: '#0d3f4d',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'EasyShop',
+  },
 };
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -36,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif" }}>
         <Providers>
           <ConditionalHeader />
+          <ServiceWorkerRegistrar />
           {children}
           <ProductComparisonBar />
         </Providers>
