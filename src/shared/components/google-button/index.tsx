@@ -4,7 +4,7 @@ import React from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface GoogleButtonProps {
   mode?: "login" | "signup";
@@ -18,6 +18,7 @@ const GoogleButton: React.FC<GoogleButtonProps> = ({
   onError 
 }) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const googleAuthMutation = useMutation({
     mutationFn: async (data: { access_token: string; user_info: any }) => {
@@ -36,23 +37,25 @@ const GoogleButton: React.FC<GoogleButtonProps> = ({
       return response.data;
     },
     onSuccess: (data) => {
-      // Store the token so the user stays logged in
+      // Save token so axiosInstance attaches it on every request
       if (data?.token) {
-        localStorage.setItem('accessToken', data.token);
+        localStorage.setItem("accessToken", data.token);
       }
+
+      // Invalidate the cached user query so useUser refetches immediately
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+
       if (onSuccess) {
         onSuccess();
       } else {
-        setTimeout(() => {
-          router.push("/");
-        }, 1000);
+        router.push("/");
+        router.refresh();
       }
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
                           "Google authentication failed. Please try again.";
-      
       if (onError) {
         onError(errorMessage);
       } else {
