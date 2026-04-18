@@ -50,7 +50,6 @@ const Particle = ({ style }: { style: React.CSSProperties }) => (
 export default function InstallPage() {
   const [deferredPrompt, setDeferredPrompt]   = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled]             = useState(false);
-  const [installing, setInstalling]           = useState(false);
   const [pwaInstalling, setPwaInstalling]     = useState(false);
   const [platform, setPlatform]               = useState<"ios" | "android" | "desktop" | "unknown">("unknown");
   const [activeTab, setActiveTab]             = useState<"pwa" | "android">("pwa");
@@ -61,7 +60,15 @@ export default function InstallPage() {
   // Refs for scroll targets
   const tabSectionRef = useRef<HTMLElement>(null);
 
-  // ── Scroll hero button to tab section ──────────────────────────────────────
+  // ── Hero button: switch to Android tab + scroll to APK downloads ──────────
+  const handleHeroButton = () => {
+    setActiveTab("android");
+    setTimeout(() => {
+      tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
+  // ── Scroll to tabs (used by PWA fallback) ─────────────────────────────────
   const scrollToTabs = () => {
     tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -118,10 +125,11 @@ export default function InstallPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // ── PWA install — dedicated handler for the PWA button ────────────────────
+  // ── PWA install — triggers browser prompt or shows animated guide ──────────
   const handlePwaInstall = async () => {
     if (installed) return;
     if (deferredPrompt) {
+      // Browser supports one-click install — trigger it directly
       setPwaInstalling(true);
       try {
         await deferredPrompt.prompt();
@@ -131,13 +139,16 @@ export default function InstallPage() {
       } catch { /* dismissed */ }
       finally { setPwaInstalling(false); }
     } else {
-      // Fallback: scroll to manual steps and highlight them
-      tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      // No prompt available — scroll to the step cards so user sees instructions
+      setActiveTab("pwa");
+      setTimeout(() => {
+        tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
     }
   };
 
-  // ── Hero button: scroll to tabs ────────────────────────────────────────────
-  const handleHeroButton = () => scrollToTabs();
+  // ── Hero button: switch to Android tab + scroll ────────────────────────────
+  // (already defined above)
 
   const particles = Array.from({ length: 12 }, (_, i) => ({
     width:  `${20 + (i * 17) % 40}px`,
@@ -275,32 +286,37 @@ export default function InstallPage() {
                   Already installed on your device!
                 </div>
               ) : (
-                <button
-                  onClick={handlePwaInstall}
-                  disabled={pwaInstalling}
-                  className="group inline-flex items-center gap-3 bg-white text-indigo-700 font-black text-base px-8 py-3.5 rounded-xl hover:bg-indigo-50 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg disabled:opacity-70"
-                >
-                  {pwaInstalling ? (
-                    <span className="w-5 h-5 border-2 border-indigo-300 border-t-indigo-700 rounded-full animate-spin" />
-                  ) : (
-                    <Download size={20} />
-                  )}
-                  {pwaInstalling ? "Installing…" : "Install PWA Version"}
-                  {!pwaInstalling && (
-                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                  )}
-                </button>
-              )}
+                <>
+                  <button
+                    onClick={handlePwaInstall}
+                    disabled={pwaInstalling}
+                    className="group inline-flex items-center gap-3 bg-white text-indigo-700 font-black text-base px-8 py-3.5 rounded-xl hover:bg-indigo-50 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg disabled:opacity-70"
+                  >
+                    {pwaInstalling ? (
+                      <span className="w-5 h-5 border-2 border-indigo-300 border-t-indigo-700 rounded-full animate-spin" />
+                    ) : (
+                      <Download size={20} />
+                    )}
+                    {pwaInstalling ? "Creating shortcut…" : deferredPrompt ? "Install PWA Version" : "Add to Home Screen"}
+                    {!pwaInstalling && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
+                  </button>
 
-              {/* Platform hint */}
-              {!installed && !deferredPrompt && (
-                <p className="text-white/50 text-xs mt-4">
-                  {platform === "ios"
-                    ? "On iOS: use Safari → Share → Add to Home Screen"
-                    : platform === "android"
-                    ? "On Android: use Chrome → menu (⋮) → Add to Home screen"
-                    : "On desktop: look for the install icon (⊕) in your browser's address bar"}
-                </p>
+                  {/* Dynamic hint based on platform & prompt availability */}
+                  <div className="mt-5 bg-white/10 rounded-xl px-5 py-3 text-sm text-white/80 max-w-sm mx-auto">
+                    {deferredPrompt ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                        Your browser is ready — click the button above to install instantly
+                      </span>
+                    ) : platform === "ios" ? (
+                      <span>📱 On Safari: tap <strong>Share (□↑)</strong> → <strong>Add to Home Screen</strong></span>
+                    ) : platform === "android" ? (
+                      <span>📱 On Chrome: tap <strong>menu (⋮)</strong> → <strong>Add to Home screen</strong></span>
+                    ) : (
+                      <span>🖥️ On Chrome/Edge: click the <strong>install icon (⊕)</strong> in the address bar</span>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </div>
