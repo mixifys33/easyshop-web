@@ -6,7 +6,7 @@ import {
   Smartphone, Monitor, Download, Apple, Star,
   Shield, Zap, Wifi, Bell, ShoppingBag, ArrowRight,
   CheckCircle, Play, Globe, Package, Sparkles, ChevronDown,
-  FileArchive, Clock, HardDrive, RefreshCw,
+  FileArchive, Clock, HardDrive, RefreshCw, ExternalLink,
 } from "lucide-react";
 import type { ApkRelease } from "@/app/api/apk-releases/route";
 
@@ -18,12 +18,12 @@ interface BeforeInstallPromptEvent extends Event {
 
 // ─── Static data ─────────────────────────────────────────────────────────────
 const FEATURES = [
-  { icon: Zap,       title: "Lightning Fast",    desc: "Instant load times with offline support",       color: "from-yellow-400 to-orange-500" },
-  { icon: Bell,      title: "Push Notifications",desc: "Never miss a deal or order update",             color: "from-purple-400 to-pink-500"   },
-  { icon: Wifi,      title: "Works Offline",     desc: "Browse products even without internet",         color: "from-blue-400 to-cyan-500"     },
-  { icon: Shield,    title: "Secure & Private",  desc: "Bank-grade security for your data",             color: "from-green-400 to-emerald-500" },
-  { icon: ShoppingBag, title: "One-tap Shopping",desc: "Checkout faster than ever before",              color: "from-rose-400 to-red-500"      },
-  { icon: Star,      title: "Exclusive Deals",   desc: "App-only offers and early access sales",        color: "from-amber-400 to-yellow-500"  },
+  { icon: Zap,         title: "Lightning Fast",     desc: "Instant load times with offline support",  color: "from-yellow-400 to-orange-500" },
+  { icon: Bell,        title: "Push Notifications", desc: "Never miss a deal or order update",        color: "from-purple-400 to-pink-500"   },
+  { icon: Wifi,        title: "Works Offline",      desc: "Browse products even without internet",    color: "from-blue-400 to-cyan-500"     },
+  { icon: Shield,      title: "Secure & Private",   desc: "Bank-grade security for your data",        color: "from-green-400 to-emerald-500" },
+  { icon: ShoppingBag, title: "One-tap Shopping",   desc: "Checkout faster than ever before",         color: "from-rose-400 to-red-500"      },
+  { icon: Star,        title: "Exclusive Deals",    desc: "App-only offers and early access sales",   color: "from-amber-400 to-yellow-500"  },
 ];
 
 const STEPS_IOS = [
@@ -31,133 +31,113 @@ const STEPS_IOS = [
   { step: "2", text: 'Scroll down and tap "Add to Home Screen"' },
   { step: "3", text: 'Tap "Add" in the top-right corner' },
 ];
-
 const STEPS_ANDROID = [
   { step: "1", text: 'Tap the three-dot menu (⋮) in Chrome' },
   { step: "2", text: 'Tap "Add to Home screen" or "Install app"' },
   { step: "3", text: 'Tap "Add" or "Install" to confirm' },
 ];
-
 const STEPS_DESKTOP = [
   { step: "1", text: 'Look for the install icon (⊕) in the address bar' },
-  { step: "2", text: 'Click "Install EasyShop" in the popup' },
+  { step: "2", text: 'Click "Install Eshop UG" in the popup' },
   { step: "3", text: 'The app opens in its own window — enjoy!' },
 ];
 
-// ─── Floating particle component ─────────────────────────────────────────────
 const Particle = ({ style }: { style: React.CSSProperties }) => (
-  <div
-    className="absolute rounded-full opacity-20 animate-pulse pointer-events-none"
-    style={style}
-  />
+  <div className="absolute rounded-full opacity-20 animate-pulse pointer-events-none" style={style} />
 );
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function InstallPage() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState(false);
-  const [installing, setInstalling] = useState(false);
-  const [platform, setPlatform] = useState<"ios" | "android" | "desktop" | "unknown">("unknown");
-  const [activeTab, setActiveTab] = useState<"pwa" | "android">("pwa");
-  const [showSteps, setShowSteps] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
+  const [deferredPrompt, setDeferredPrompt]   = useState<BeforeInstallPromptEvent | null>(null);
+  const [installed, setInstalled]             = useState(false);
+  const [installing, setInstalling]           = useState(false);
+  const [pwaInstalling, setPwaInstalling]     = useState(false);
+  const [platform, setPlatform]               = useState<"ios" | "android" | "desktop" | "unknown">("unknown");
+  const [activeTab, setActiveTab]             = useState<"pwa" | "android">("pwa");
+  const [apkReleases, setApkReleases]         = useState<ApkRelease[]>([]);
+  const [apkLoading, setApkLoading]           = useState(false);
+  const [counts, setCounts]                   = useState({ users: 0, products: 0, rating: 0 });
 
-  // APK releases
-  const [apkReleases, setApkReleases] = useState<ApkRelease[]>([]);
-  const [apkLoading, setApkLoading] = useState(false);
+  // Refs for scroll targets
+  const tabSectionRef = useRef<HTMLElement>(null);
 
+  // ── Scroll hero button to tab section ──────────────────────────────────────
+  const scrollToTabs = () => {
+    tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // ── Fetch APK releases ─────────────────────────────────────────────────────
   const fetchApks = async () => {
     setApkLoading(true);
     try {
-      const res = await fetch("/api/apk-releases");
+      const res  = await fetch("/api/apk-releases");
       const data = await res.json();
       setApkReleases(data.releases ?? []);
     } catch { setApkReleases([]); }
-    finally { setApkLoading(false); }
+    finally   { setApkLoading(false); }
   };
-
   useEffect(() => { fetchApks(); }, []);
 
-  // Detect platform
+  // ── Detect platform ────────────────────────────────────────────────────────
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
-    if (/iphone|ipad|ipod/.test(ua)) setPlatform("ios");
-    else if (/android/.test(ua)) setPlatform("android");
-    else setPlatform("desktop");
+    if (/iphone|ipad|ipod/.test(ua))  setPlatform("ios");
+    else if (/android/.test(ua))       setPlatform("android");
+    else                               setPlatform("desktop");
   }, []);
 
-  // Capture PWA install prompt + auto-trigger after short delay
+  // ── Capture beforeinstallprompt — DO NOT auto-trigger, let user click ──────
   useEffect(() => {
-    // Check if already installed (standalone mode)
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setInstalled(true);
       return;
     }
-
     const handler = (e: Event) => {
       e.preventDefault();
-      const prompt = e as BeforeInstallPromptEvent;
-      setDeferredPrompt(prompt);
-
-      // Auto-trigger the native install prompt after 1.5s on this page
-      setTimeout(async () => {
-        try {
-          await prompt.prompt();
-          const { outcome } = await prompt.userChoice;
-          if (outcome === "accepted") setInstalled(true);
-          setDeferredPrompt(null);
-        } catch {
-          // User dismissed or prompt already used — keep manual button visible
-        }
-      }, 1500);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
-
     window.addEventListener("beforeinstallprompt", handler);
-    window.addEventListener("appinstalled", () => setInstalled(true));
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-    };
+    window.addEventListener("appinstalled", () => { setInstalled(true); setDeferredPrompt(null); });
+    return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  // Animated counter
-  const [counts, setCounts] = useState({ users: 0, products: 0, rating: 0 });
+  // ── Animated counter ───────────────────────────────────────────────────────
   useEffect(() => {
     const targets = { users: 50000, products: 120000, rating: 49 };
-    const duration = 2000;
-    const steps = 60;
-    const interval = duration / steps;
     let step = 0;
     const timer = setInterval(() => {
       step++;
-      const progress = step / steps;
-      const ease = 1 - Math.pow(1 - progress, 3);
+      const ease = 1 - Math.pow(1 - step / 60, 3);
       setCounts({
         users:    Math.round(targets.users    * ease),
         products: Math.round(targets.products * ease),
         rating:   Math.round(targets.rating   * ease),
       });
-      if (step >= steps) clearInterval(timer);
-    }, interval);
+      if (step >= 60) clearInterval(timer);
+    }, 2000 / 60);
     return () => clearInterval(timer);
   }, []);
 
-  const handleInstall = async () => {
+  // ── PWA install — dedicated handler for the PWA button ────────────────────
+  const handlePwaInstall = async () => {
+    if (installed) return;
     if (deferredPrompt) {
-      setInstalling(true);
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") setInstalled(true);
-      setDeferredPrompt(null);
-      setInstalling(false);
+      setPwaInstalling(true);
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === "accepted") setInstalled(true);
+        setDeferredPrompt(null);
+      } catch { /* dismissed */ }
+      finally { setPwaInstalling(false); }
     } else {
-      setShowSteps(true);
+      // Fallback: scroll to manual steps and highlight them
+      tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
-  const currentSteps =
-    platform === "ios" ? STEPS_IOS :
-    platform === "android" ? STEPS_ANDROID :
-    STEPS_DESKTOP;
+  // ── Hero button: scroll to tabs ────────────────────────────────────────────
+  const handleHeroButton = () => scrollToTabs();
 
   const particles = Array.from({ length: 12 }, (_, i) => ({
     width:  `${20 + (i * 17) % 40}px`,
@@ -165,19 +145,15 @@ export default function InstallPage() {
     top:    `${(i * 31) % 90}%`,
     left:   `${(i * 23) % 90}%`,
     background: i % 3 === 0 ? "#6366f1" : i % 3 === 1 ? "#ec4899" : "#f59e0b",
-    animationDelay: `${i * 0.3}s`,
+    animationDelay:    `${i * 0.3}s`,
     animationDuration: `${2 + (i % 3)}s`,
   }));
 
   return (
     <div className="min-h-screen bg-[#f1f1f1] overflow-x-hidden">
 
-      {/* ── Hero ── */}
-      <section
-        ref={heroRef}
-        className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white"
-      >
-        {/* Animated background blobs */}
+      {/* ── HERO ── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-500 rounded-full opacity-20 animate-[spin_20s_linear_infinite]" />
           <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-pink-500 rounded-full opacity-20 animate-[spin_25s_linear_infinite_reverse]" />
@@ -205,7 +181,7 @@ export default function InstallPage() {
           <div>
             <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-4">
               <span className="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
-                EasyShop
+                Eshop UG
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-white/80 max-w-2xl">
@@ -216,9 +192,9 @@ export default function InstallPage() {
           {/* Stats */}
           <div className="flex flex-wrap justify-center gap-8 mt-2">
             {[
-              { value: `${(counts.users / 1000).toFixed(0)}K+`, label: "Happy Shoppers" },
-              { value: `${(counts.products / 1000).toFixed(0)}K+`, label: "Products" },
-              { value: `${(counts.rating / 10).toFixed(1)}★`,    label: "App Rating" },
+              { value: `${(counts.users    / 1000).toFixed(0)}K+`, label: "Happy Shoppers" },
+              { value: `${(counts.products / 1000).toFixed(0)}K+`, label: "Products"       },
+              { value: `${(counts.rating   / 10  ).toFixed(1)}★`,  label: "App Rating"     },
             ].map(({ value, label }) => (
               <div key={label} className="text-center">
                 <div className="text-3xl font-black text-yellow-400">{value}</div>
@@ -227,25 +203,20 @@ export default function InstallPage() {
             ))}
           </div>
 
-          {/* CTA */}
+          {/* ── Hero CTA — scrolls to tab section ── */}
           {installed ? (
             <div className="flex items-center gap-3 bg-green-500/20 border border-green-400/40 rounded-2xl px-8 py-4 text-green-300 text-lg font-semibold">
               <CheckCircle size={24} />
-              EasyShop is installed!
+              Eshop UG is installed!
             </div>
           ) : (
             <button
-              onClick={handleInstall}
-              disabled={installing}
-              className="group relative overflow-hidden bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-orange-500 hover:to-yellow-400 text-black font-black text-lg px-10 py-4 rounded-2xl shadow-2xl shadow-orange-500/40 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-70"
+              onClick={handleHeroButton}
+              className="group relative overflow-hidden bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-orange-500 hover:to-yellow-400 text-black font-black text-lg px-10 py-4 rounded-2xl shadow-2xl shadow-orange-500/40 transition-all duration-300 hover:scale-105 active:scale-95"
             >
               <span className="relative z-10 flex items-center gap-3">
-                {installing ? (
-                  <span className="w-5 h-5 border-2 border-black/40 border-t-black rounded-full animate-spin" />
-                ) : (
-                  <Download size={22} />
-                )}
-                {installing ? "Installing…" : "Install EasyShop"}
+                <Download size={22} />
+                Install Eshop UG
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
@@ -256,12 +227,12 @@ export default function InstallPage() {
         </div>
       </section>
 
-      {/* ── Tab switcher: PWA vs Android APK ── */}
-      <section className="max-w-4xl mx-auto px-4 py-12">
+      {/* ── TAB SWITCHER — this is the scroll target ── */}
+      <section ref={tabSectionRef} className="max-w-4xl mx-auto px-4 py-12 scroll-mt-4">
         <div className="flex bg-white rounded-2xl shadow-md p-1.5 gap-1">
           {[
-            { key: "pwa",     icon: Globe,       label: "Install as App (PWA)"   },
-            { key: "android", icon: Smartphone,  label: "Android APK"            },
+            { key: "pwa",     icon: Globe,      label: "Install as App (PWA)" },
+            { key: "android", icon: Smartphone, label: "Android APK"          },
           ].map(({ key, icon: Icon, label }) => (
             <button
               key={key}
@@ -279,37 +250,67 @@ export default function InstallPage() {
         </div>
       </section>
 
-      {/* ── PWA Install Panel ── */}
+      {/* ── PWA PANEL ── */}
       {activeTab === "pwa" && (
         <section className="max-w-4xl mx-auto px-4 pb-12 space-y-8">
 
-          {/* Platform cards */}
+          {/* ── DEDICATED PWA INSTALL BUTTON ── */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white text-center shadow-xl shadow-indigo-300/40">
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full animate-pulse" />
+              <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: "1s" }} />
+            </div>
+            <div className="relative z-10">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+                <Globe size={32} className="text-white" />
+              </div>
+              <h3 className="text-2xl font-black mb-2">Install PWA Version</h3>
+              <p className="text-white/80 text-sm mb-6 max-w-sm mx-auto">
+                Add Eshop UG directly to your home screen or desktop — works like a native app, no app store needed.
+              </p>
+
+              {installed ? (
+                <div className="inline-flex items-center gap-2 bg-green-400/20 border border-green-300/40 rounded-xl px-6 py-3 text-green-200 font-bold">
+                  <CheckCircle size={20} />
+                  Already installed on your device!
+                </div>
+              ) : (
+                <button
+                  onClick={handlePwaInstall}
+                  disabled={pwaInstalling}
+                  className="group inline-flex items-center gap-3 bg-white text-indigo-700 font-black text-base px-8 py-3.5 rounded-xl hover:bg-indigo-50 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg disabled:opacity-70"
+                >
+                  {pwaInstalling ? (
+                    <span className="w-5 h-5 border-2 border-indigo-300 border-t-indigo-700 rounded-full animate-spin" />
+                  ) : (
+                    <Download size={20} />
+                  )}
+                  {pwaInstalling ? "Installing…" : "Install PWA Version"}
+                  {!pwaInstalling && (
+                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  )}
+                </button>
+              )}
+
+              {/* Platform hint */}
+              {!installed && !deferredPrompt && (
+                <p className="text-white/50 text-xs mt-4">
+                  {platform === "ios"
+                    ? "On iOS: use Safari → Share → Add to Home Screen"
+                    : platform === "android"
+                    ? "On Android: use Chrome → menu (⋮) → Add to Home screen"
+                    : "On desktop: look for the install icon (⊕) in your browser's address bar"}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Platform step cards */}
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              {
-                icon: Apple,
-                title: "iPhone / iPad",
-                subtitle: "iOS Safari",
-                gradient: "from-gray-800 to-gray-900",
-                steps: STEPS_IOS,
-                active: platform === "ios",
-              },
-              {
-                icon: Smartphone,
-                title: "Android",
-                subtitle: "Chrome Browser",
-                gradient: "from-green-600 to-emerald-700",
-                steps: STEPS_ANDROID,
-                active: platform === "android",
-              },
-              {
-                icon: Monitor,
-                title: "Desktop",
-                subtitle: "Chrome / Edge",
-                gradient: "from-indigo-600 to-purple-700",
-                steps: STEPS_DESKTOP,
-                active: platform === "desktop",
-              },
+              { icon: Apple,      title: "iPhone / iPad", subtitle: "iOS Safari",    gradient: "from-gray-800 to-gray-900",    steps: STEPS_IOS,     active: platform === "ios"     },
+              { icon: Smartphone, title: "Android",       subtitle: "Chrome Browser",gradient: "from-green-600 to-emerald-700",steps: STEPS_ANDROID, active: platform === "android" },
+              { icon: Monitor,    title: "Desktop",       subtitle: "Chrome / Edge", gradient: "from-indigo-600 to-purple-700",steps: STEPS_DESKTOP, active: platform === "desktop" },
             ].map(({ icon: Icon, title, subtitle, gradient, steps, active }) => (
               <div
                 key={title}
@@ -318,7 +319,7 @@ export default function InstallPage() {
                 }`}
               >
                 {active && (
-                  <div className="absolute top-3 right-3 bg-indigo-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  <div className="absolute top-3 right-3 bg-indigo-500 text-white text-xs font-bold px-2 py-0.5 rounded-full z-10">
                     Your device
                   </div>
                 )}
@@ -345,33 +346,17 @@ export default function InstallPage() {
             ))}
           </div>
 
-          {/* One-click install button (shows when prompt available) */}
-          {deferredPrompt && !installed && (
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white text-center shadow-xl shadow-indigo-200">
-              <Download size={40} className="mx-auto mb-4 animate-bounce" />
-              <h3 className="text-2xl font-black mb-2">Ready to install!</h3>
-              <p className="text-white/80 mb-6">Your browser supports one-click installation.</p>
-              <button
-                onClick={handleInstall}
-                disabled={installing}
-                className="bg-white text-indigo-700 font-black px-10 py-3 rounded-xl hover:bg-indigo-50 transition-all hover:scale-105 active:scale-95 shadow-lg"
-              >
-                {installing ? "Installing…" : "Install Now"}
-              </button>
-            </div>
-          )}
-
           {installed && (
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-white text-center shadow-xl">
               <CheckCircle size={48} className="mx-auto mb-4" />
               <h3 className="text-2xl font-black mb-2">Successfully Installed!</h3>
-              <p className="text-white/90">EasyShop is now on your device. Enjoy the full app experience!</p>
+              <p className="text-white/90">Eshop UG is now on your device. Enjoy the full app experience!</p>
             </div>
           )}
         </section>
       )}
 
-      {/* ── Android APK Panel ── */}
+      {/* ── ANDROID APK PANEL ── */}
       {activeTab === "android" && (
         <section className="max-w-4xl mx-auto px-4 pb-12 space-y-6">
           <div className="bg-white rounded-2xl shadow-md p-8">
@@ -385,7 +370,6 @@ export default function InstallPage() {
               </div>
             </div>
 
-            {/* APK download slots — dynamic from /public/apk folder */}
             <div className="space-y-3">
               {apkLoading ? (
                 <div className="flex items-center justify-center gap-3 py-10 text-gray-400">
@@ -399,49 +383,63 @@ export default function InstallPage() {
                   </div>
                   <p className="text-gray-500 text-sm font-medium">No APK releases yet</p>
                   <p className="text-gray-400 text-xs max-w-xs">
-                    Drop <code className="bg-gray-100 px-1 rounded">.apk</code> files into{" "}
-                    <code className="bg-gray-100 px-1 rounded">public/apk/</code> and they'll appear here automatically.
+                    Add entries to <code className="bg-gray-100 px-1 rounded">public/apk-releases.json</code> and they'll appear here.
                   </p>
                 </div>
               ) : (
                 apkReleases.map((apk) => (
-                  <a
-                    key={apk.fileName}
-                    href={apk.downloadUrl}
-                    download={apk.fileName}
-                    className="group flex items-center justify-between p-4 rounded-xl border-2 border-green-200 bg-green-50 hover:bg-green-100 hover:border-green-400 transition-all duration-200 cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md shrink-0">
-                        <FileArchive size={20} className="text-white" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-gray-800 truncate">{apk.name}</p>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <span className="flex items-center gap-1 text-xs text-gray-500">
-                            <HardDrive size={11} /> {apk.size}
-                          </span>
-                          <span className="flex items-center gap-1 text-xs text-gray-400">
-                            <Clock size={11} />
-                            {new Date(apk.uploadedAt).toLocaleDateString("en-UG", {
-                              day: "numeric", month: "short", year: "numeric",
-                            })}
-                          </span>
+                  apk.available && apk.downloadUrl ? (
+                    <a
+                      key={apk.fileName}
+                      href={apk.downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center justify-between p-4 rounded-xl border-2 border-green-200 bg-green-50 hover:bg-green-100 hover:border-green-400 transition-all duration-200 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md shrink-0">
+                          <FileArchive size={20} className="text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-gray-800 truncate">{apk.name}</p>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <span className="flex items-center gap-1 text-xs text-gray-500">
+                              <HardDrive size={11} /> {apk.size}
+                            </span>
+                            <span className="flex items-center gap-1 text-xs text-gray-400">
+                              <Clock size={11} />
+                              {new Date(apk.uploadedAt).toLocaleDateString("en-UG", { day: "numeric", month: "short", year: "numeric" })}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 ml-3">
-                      <span className="hidden sm:block text-xs font-bold text-gray-500">{apk.fileName}</span>
-                      <div className="flex items-center gap-1.5 bg-green-500 group-hover:bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">
-                        <Download size={13} />
+                      <div className="flex items-center gap-1.5 bg-green-500 group-hover:bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors shrink-0 ml-3">
+                        <ExternalLink size={13} />
                         Download
                       </div>
+                    </a>
+                  ) : (
+                    <div
+                      key={apk.fileName}
+                      className="flex items-center justify-between p-4 rounded-xl border-2 border-gray-200 bg-gray-50 opacity-60"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-gray-300 flex items-center justify-center shrink-0">
+                          <FileArchive size={20} className="text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-gray-600 truncate">{apk.name}</p>
+                          {apk.note && <p className="text-xs text-gray-400 truncate">{apk.note}</p>}
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold bg-gray-200 text-gray-500 px-3 py-1.5 rounded-lg shrink-0 ml-3">
+                        Coming Soon
+                      </span>
                     </div>
-                  </a>
+                  )
                 ))
               )}
 
-              {/* Refresh button */}
               {!apkLoading && (
                 <button
                   onClick={fetchApks}
@@ -465,7 +463,7 @@ export default function InstallPage() {
                   'Go to Settings → Security → Enable "Unknown Sources" or "Install unknown apps"',
                   "Open the downloaded APK file from your Downloads folder",
                   'Tap "Install" and wait for the installation to complete',
-                  "Open EasyShop from your app drawer and enjoy!",
+                  "Open Eshop UG from your app drawer and enjoy!",
                 ].map((text, i) => (
                   <div key={i} className="flex gap-3 items-start">
                     <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm flex items-center justify-center shrink-0 mt-0.5">
@@ -480,18 +478,13 @@ export default function InstallPage() {
         </section>
       )}
 
-      {/* ── Features grid ── */}
+      {/* ── FEATURES GRID ── */}
       <section className="max-w-6xl mx-auto px-4 py-12">
-        <h2 className="text-3xl font-black text-center text-gray-900 mb-2">
-          Why install the app?
-        </h2>
-        <p className="text-center text-gray-500 mb-10">Everything you love about EasyShop, supercharged.</p>
+        <h2 className="text-3xl font-black text-center text-gray-900 mb-2">Why install the app?</h2>
+        <p className="text-center text-gray-500 mb-10">Everything you love about Eshop UG, supercharged.</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map(({ icon: Icon, title, desc, color }) => (
-            <div
-              key={title}
-              className="group bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-            >
+            <div key={title} className="group bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                 <Icon size={24} className="text-white" />
               </div>
@@ -502,7 +495,7 @@ export default function InstallPage() {
         </div>
       </section>
 
-      {/* ── Bottom CTA ── */}
+      {/* ── BOTTOM CTA ── */}
       <section className="max-w-4xl mx-auto px-4 py-12">
         <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 rounded-3xl p-10 text-white text-center shadow-2xl">
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -513,16 +506,16 @@ export default function InstallPage() {
             <ShoppingBag size={48} className="mx-auto mb-4 text-yellow-400" />
             <h2 className="text-3xl font-black mb-3">Start shopping smarter</h2>
             <p className="text-white/70 mb-8 max-w-md mx-auto">
-              Install EasyShop today and get access to exclusive app-only deals, faster checkout, and real-time order tracking.
+              Install Eshop UG today and get access to exclusive app-only deals, faster checkout, and real-time order tracking.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <button
-                onClick={handleInstall}
-                disabled={installing || installed}
+                onClick={handlePwaInstall}
+                disabled={pwaInstalling || installed}
                 className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-black px-8 py-3 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg disabled:opacity-60"
               >
                 {installed ? <CheckCircle size={20} /> : <Download size={20} />}
-                {installed ? "Installed!" : installing ? "Installing…" : "Install Now"}
+                {installed ? "Installed!" : pwaInstalling ? "Installing…" : "Install PWA Version"}
               </button>
               <Link
                 href="/"
