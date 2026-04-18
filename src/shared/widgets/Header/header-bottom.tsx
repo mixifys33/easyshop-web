@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   AlignLeft, ChevronDown, ChevronRight, User, Heart, ShoppingCart,
-  Home, Sparkles, Tag, Search, X, Loader2, TrendingUp,
+  Home, Sparkles, Tag, Search, X, Loader2, TrendingUp, Download,
 } from 'lucide-react';
 import { navItemTypes } from '../../../configs/constants';
 import useUser from '@/hooks/useUser';
@@ -333,6 +333,13 @@ const HeaderBottom = () => {
               Eshop AI
             </Link>
 
+            {/* Install pill */}
+            <Link href="/install"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-orange-500 hover:to-amber-400 text-teal-900 text-xs font-semibold rounded-full transition-all shadow-md flex-shrink-0">
+              <Download className="w-3.5 h-3.5" />
+              Install App
+            </Link>
+
             {/* ── Sticky extras ── */}
             {isSticky && (
               <>
@@ -393,10 +400,10 @@ const HeaderBottom = () => {
             {[
               { href: '/', icon: Home, label: 'Home', activeColor: 'text-teal-700', activeBg: 'bg-teal-50' },
               { href: '/ai-assistant', icon: Sparkles, label: 'Eshop AI', gradient: true },
+              { href: '/install', icon: Download, label: 'Install', activeColor: 'text-orange-500', activeBg: 'bg-orange-50' },
               { href: '/wishlist', icon: Heart, label: 'Wishlist', activeColor: 'text-red-500', activeBg: 'bg-red-50', badge: wishlist?.length, badgeColor: 'bg-red-500 text-white' },
               { href: '/cart', icon: ShoppingCart, label: 'Cart', activeColor: 'text-teal-700', activeBg: 'bg-teal-50', badge: cart?.length, badgeColor: 'bg-amber-400 text-teal-900' },
-            ].map(({ href, icon: Icon, label, activeColor, activeBg, gradient, badge, badgeColor }: any) => {
-              const active = pathname === href;
+            ].map(({ href, icon: Icon, label, activeColor, activeBg, gradient, badge, badgeColor }: any) => {              const active = pathname === href;
               return (
                 <Link key={href} href={href} className="flex flex-col items-center gap-0.5 p-1 min-w-[52px]">
                   <div className={`relative flex items-center justify-center w-9 h-9 rounded-full transition-all ${

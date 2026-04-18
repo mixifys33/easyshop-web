@@ -18,7 +18,7 @@ const ForgotPassword = () => {
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [otp, setOtp] = useState(["","","",""]);
+  const [otp, setOtp] = useState(["","","","","",""]);
   const [step, setStep] = useState<"email" | "otp" | "reset">("email");
   const [serverError, setServerError] = useState<string | null>(null);  const router = useRouter();
 

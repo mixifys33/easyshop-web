@@ -23,7 +23,7 @@ const Signup = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [canResend, setCanResend] = useState(false);
   const [timer, setTimer] = useState(60);
-  const [otp, setOtp] = useState(["","","","",]);
+  const [otp, setOtp] = useState(["","","","","",""]);
   const [showOtp, setShowOtp] = useState(false);
   const [userData, setUserData] = useState<FormData | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null )[] >([]);
