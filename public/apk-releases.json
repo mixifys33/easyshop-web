@@ -4,18 +4,17 @@
     "fileName": "Eshop-ug-latest-v1.5.0.apk",
     "version": "1.5.0",
     "size": "76.1 MB",
-    "downloadUrl": "",
-    "note": "Paste your Google Drive share link or GitHub Release download URL here",
+    "downloadUrl": "https://drive.google.com/uc?export=download&id=1D6vC-MaSyr5ZuB83_I0ti-Gclx-khwTQ",
     "uploadedAt": "2026-04-18T00:00:00.000Z",
-    "available": false
+    "available": true
   },
   {
     "name": "Eshop UG v1.0.0",
     "fileName": "Eshop-ug-v1.0.0.apk",
     "version": "1.0.0",
     "size": "73.1 MB",
-    "downloadUrl": "https://drive.google.com/file/d/1D6vC-MaSyr5ZuB83_I0ti-Gclx-khwTQ/view?usp=drive_link",
-    "note": "Paste your Google Drive share link or GitHub Release download URL here",
+    "downloadUrl": "",
+    "note": "Paste Google Drive direct download URL here",
     "uploadedAt": "2026-04-18T00:00:00.000Z",
     "available": false
   }
